@@ -37,60 +37,61 @@ while getopts SAs:a:u:t:i: opt; do
     (t) token=$OPTARG;;
     (i) image=$OPTARG;;
     (*) usage
-    esac
+  esac
 done
 
-if [ "$install_server" = "false" ] && [ -z "$server_url" -o -z "$token" ]; then
+if [ "$install_server" = "false" ] && { [ -z "$server_url" ] || [ -z "$token" ]; }; then
   echo ERROR: must provide -u and -t with -A
   echo
   usage
 fi
 
 if [ "$install_server" = "true" ]; then
-  echo Installing k3s server on $server_name
-  lxc init $image $server_name
-  lxc config set $server_name linux.kernel_modules br_netfilter
-  lxc config set $server_name linux.kernel_modules overlay
+  echo "Installing k3s server on $server_name"
+  lxc init "$image" "$server_name"
+  lxc config set "$server_name" linux.kernel_modules br_netfilter
+  lxc config set "$server_name" linux.kernel_modules overlay
   echo "L /dev/kmsg - - - - /dev/console" > /tmp/$$-kmsg.conf
-  lxc file push /tmp/$$-kmsg.conf $server_name/etc/tmpfiles.d/$$-kmsg.conf
+  lxc file push /tmp/$$-kmsg.conf "$server_name"/etc/tmpfiles.d/$$-kmsg.conf
   rm /tmp/$$-kmsg.conf
-  lxc start $server_name
+  lxc start "$server_name"
   echo Waiting for server to come up...
-  while ! lxc info $server_name |grep -qP "eth0:\tinet\t"; do
+  while ! lxc info "$server_name" |grep -qP "eth0:\tinet\t"; do
       sleep 1
   done
-  server_ip=$(lxc query /1.0/containers/$server_name/state |jq -r .network.eth0.addresses[0].address)
-  lxc exec $server_name -- bash -c  "curl -sfL https://get.k3s.io | sh -"
-  lxc exec $server_name -- bash -c  "sed -i 's/^\(.*modprobe.*\)$/#\1/' /etc/systemd/system/k3s.service"
-  lxc exec $server_name -- bash -c  "systemctl daemon-reload"
-  lxc exec $server_name -- bash -c  "reboot"
+  server_ip=$(lxc query /1.0/containers/"$server_name"/state |jq -r .network.eth0.addresses[0].address)
+  lxc exec "$server_name" -- bash -c  "curl -sfL https://get.k3s.io | sh -"
+  lxc exec "$server_name" -- bash -c  "sed -i 's/^\(.*modprobe.*\)$/#\1/' /etc/systemd/system/k3s.service"
+  lxc exec "$server_name" -- bash -c  "systemctl daemon-reload"
+  lxc exec "$server_name" -- bash -c  "reboot"
 fi
 
 if [ "$install_agent" = "true" ]; then
-  echo Installing k3s agent on $agent_name
-  lxc init $image $agent_name
-  lxc config set $agent_name linux.kernel_modules br_netfilter
-  lxc config set $agent_name linux.kernel_modules overlay
+  echo "Installing k3s agent on $agent_name"
+  lxc init "$image" "$agent_name"
+  lxc config set "$agent_name" linux.kernel_modules br_netfilter
+  lxc config set "$agent_name" linux.kernel_modules overlay
   echo 'L /dev/kmsg - - - - /dev/console' > /tmp/$$-kmsg.conf
-  lxc file push /tmp/$$-kmsg.conf $agent_name/etc/tmpfiles.d/$$-kmsg.conf
+  lxc file push /tmp/$$-kmsg.conf "$agent_name/etc/tmpfiles.d/$$-kmsg.conf"
   rm /tmp/$$-kmsg.conf
-  lxc start $agent_name
+  lxc start "$agent_name"
   echo Waiting for agent to come up...
-  while ! lxc info $agent_name |grep -qP "eth0:\tinet\t"; do
+  while ! lxc info "$agent_name" |grep -qP "eth0:\tinet\t"; do
       sleep 1
   done
-  agent_ip=$(lxc query /1.0/containers/$agent_name/state |jq -r .network.eth0.addresses[0].address)
   server_url="${server_url:-https://$server_ip:6443}"
   if [ -z "$token" ]; then
-    token=$(lxc exec $server_name -- cat /var/lib/rancher/k3s/server/node-token)
+    token=$(lxc exec "$server_name" -- cat /var/lib/rancher/k3s/server/node-token)
   fi
-  lxc exec $agent_name -- bash -c  "curl -sfL https://get.k3s.io | K3S_TOKEN=$token K3S_URL=$server_url sh -"
-  lxc exec $agent_name -- bash -c  "sed -i 's/^\(.*modprobe.*\)$/#\1/' /etc/systemd/system/k3s-agent.service"
-  lxc exec $agent_name -- bash -c  "systemctl daemon-reload"
-  lxc exec $agent_name -- bash -c  "reboot"
+  lxc exec "$agent_name" -- bash -c  "curl -sfL https://get.k3s.io | K3S_TOKEN=$token K3S_URL=$server_url sh -"
+  lxc exec "$agent_name" -- bash -c  "sed -i 's/^\(.*modprobe.*\)$/#\1/' /etc/systemd/system/k3s-agent.service"
+  lxc exec "$agent_name" -- bash -c  "systemctl daemon-reload"
+  lxc exec "$agent_name" -- bash -c  "reboot"
 fi
 
+echo
+echo "*********************************"
 echo k3s installation complete!
-echo lxd server instance: $server_name
-echo lxd agent instance: $agent_name
+echo "lxd server instance: $server_name"
+echo "lxd agent instance: $agent_name"
 echo
