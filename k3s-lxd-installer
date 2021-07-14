@@ -27,7 +27,7 @@ EOF
   exit 0
 }
 
-while getopts SAs:a:u:t: opt; do
+while getopts SAs:a:u:t:i: opt; do
   case $opt in
     (S) install_agent=false;;
     (A) install_server=false;;
