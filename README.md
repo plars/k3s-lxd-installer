@@ -19,7 +19,5 @@ Here are the other options available:
 ## Limitations
 
 A couple of things you may want to be aware of:
-- It doesn't seem to work well with zfs storage pools, but works well with dir pools. If your default storage pool is not dir based,  you have a couple of options:
-  1. you could create another dir based storage pool and add `-s my_pool_name` to the lines that run `lxc init`
-  1. You could add `--snapshotter native` to the ExecStart options in `/etc/systemd/system/k3s*.service` for both the server and agent instance. After doing this, you'll need to run `systemctl reload-daemon` and then `systemctl restart k3s` (or k3s-agent for the agent)
+- The overlay snapshotter doesn't seem to work well with zfs storage pools, which are a common default with lxd. This has been worked around by changing the k3s arguments to use the native snapshotter. If this isn't what you want, another option is to use the `dir` storage pool in lxd.
 - If you want to access your cluster from anywhere but the host machine for these containers, you'll want to set up a bridge so that it gets an external IP address on your network.

@@ -62,6 +62,7 @@ if [ "$install_server" = "true" ]; then
   server_ip=$(lxc query /1.0/containers/"$server_name"/state |jq -r .network.eth0.addresses[0].address)
   lxc exec "$server_name" -- bash -c  "curl -sfL https://get.k3s.io | sh -"
   lxc exec "$server_name" -- bash -c  "sed -i 's/^\(.*modprobe.*\)$/#\1/' /etc/systemd/system/k3s.service"
+  lxc exec "$server_name" -- bash -c  "sed -i 's/server /server --snapshotter native/' /etc/systemd/system/k3s.service"
   lxc exec "$server_name" -- bash -c  "systemctl daemon-reload"
   lxc exec "$server_name" -- bash -c  "reboot"
 fi
@@ -85,6 +86,7 @@ if [ "$install_agent" = "true" ]; then
   fi
   lxc exec "$agent_name" -- bash -c  "curl -sfL https://get.k3s.io | K3S_TOKEN=$token K3S_URL=$server_url sh -"
   lxc exec "$agent_name" -- bash -c  "sed -i 's/^\(.*modprobe.*\)$/#\1/' /etc/systemd/system/k3s-agent.service"
+  lxc exec "$agent_name" -- bash -c  "sed -i 's/agent /agent --snapshotter native/' /etc/systemd/system/k3s-agent.service"
   lxc exec "$agent_name" -- bash -c  "systemctl daemon-reload"
   lxc exec "$agent_name" -- bash -c  "reboot"
 fi
