@@ -51,6 +51,9 @@ if [ "$install_server" = "true" ]; then
   lxc init "$image" "$server_name"
   lxc config set "$server_name" linux.kernel_modules br_netfilter
   lxc config set "$server_name" linux.kernel_modules overlay
+  lxc config set "$server_name" security.privileged true
+  lxc config set "$server_name" security.nesting true
+  lxc config set "$server_name" raw.lxc "lxc.mount.auto = proc:rw sys:rw"
   echo "L /dev/kmsg - - - - /dev/console" > /tmp/$$-kmsg.conf
   lxc file push /tmp/$$-kmsg.conf "$server_name"/etc/tmpfiles.d/$$-kmsg.conf
   rm /tmp/$$-kmsg.conf
@@ -72,6 +75,9 @@ if [ "$install_agent" = "true" ]; then
   lxc init "$image" "$agent_name"
   lxc config set "$agent_name" linux.kernel_modules br_netfilter
   lxc config set "$agent_name" linux.kernel_modules overlay
+  lxc config set "$agent_name" security.privileged true
+  lxc config set "$agent_name" security.nesting true
+  lxc config set "$agent_name" raw.lxc "lxc.mount.auto = proc:rw sys:rw"
   echo 'L /dev/kmsg - - - - /dev/console' > /tmp/$$-kmsg.conf
   lxc file push /tmp/$$-kmsg.conf "$agent_name/etc/tmpfiles.d/$$-kmsg.conf"
   rm /tmp/$$-kmsg.conf
