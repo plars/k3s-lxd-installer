@@ -40,6 +40,11 @@ while getopts SAs:a:u:t:i: opt; do
   esac
 done
 
+if ! jq -h > /dev/null 2>&1; then
+  echo "Please install the 'jq' package before continuing"
+  exit 1
+fi
+
 if [ "$install_server" = "false" ] && { [ -z "$server_url" ] || [ -z "$token" ]; }; then
   echo ERROR: must provide -u and -t with -A
   echo
